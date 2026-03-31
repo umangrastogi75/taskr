@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASKR</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: #222;
+    --accent: #c8f135;
+    --accent2: #ff4d4d;
+    --text: #f0f0f0;
+    --muted: #555;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  header {
+    max-width: 640px;
+    margin: 0 auto 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 16px;
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .subtitle {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+  .add-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+  button.add-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button.add-btn:hover { opacity: 0.85; }
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+  .stats span { color: var(--accent); font-size: 1.2rem; font-family: 'Bebas Neue', sans-serif; }
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    transition: border-color 0.2s, transform 0.15s;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .task:hover { border-color: #333; transform: translateX(2px); }
+  .task.done { opacity: 0.4; }
+  .task.done .task-title { text-decoration: line-through; color: var(--muted); }
+  .checkbox {
+    width: 20px; height: 20px;
+    border: 2px solid var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+    font-size: 12px;
+  }
+  .checkbox:hover { border-color: var(--accent); }
+  .task.done .checkbox { border-color: var(--accent); background: var(--accent); color: #000; }
+  .task-title { flex: 1; font-size: 0.9rem; line-height: 1.4; }
+  .task-date { font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px 6px;
+    transition: color 0.15s;
+  }
+  .del-btn:hover { color: var(--accent2); }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px dashed var(--border);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>TASKR</h1>
+  <span class="subtitle">// task manager</span>
+</header>
+<div class="container">
+  <div class="add-form">
+    <input type="text" id="newTask" placeholder="add a new task..." maxlength="200">
+    <button class="add-btn" onclick="addTask()">ADD</button>
+  </div>
+  <div class="stats">
+    <div><span id="totalCount">0</span> total</div>
+    <div><span id="doneCount">0</span> done</div>
+    <div><span id="pendingCount">0</span> pending</div>
+  </div>
+  <div class="task-list" id="taskList"></div>
+</div>
+
+<script>
+let tasks = [];
+
+async function load() {
+  const res = await fetch('/api/tasks');
+  tasks = await res.json();
+  render();
+}
+
+function render() {
+  const list = document.getElementById('taskList');
+  document.getElementById('totalCount').textContent = tasks.length;
+  document.getElementById('doneCount').textContent = tasks.filter(t => t.done).length;
+  document.getElementById('pendingCount').textContent = tasks.filter(t => !t.done).length;
+
+  if (!tasks.length) {
+    list.innerHTML = '<div class="empty">no tasks yet. add one above.</div>';
+    return;
+  }
+  list.innerHTML = tasks.map(t => `
+    <div class="task ${t.done ? 'done' : ''}" id="task-${t.id}">
+      <div class="checkbox" onclick="toggle('${t.id}')">${t.done ? '✓' : ''}</div>
+      <div class="task-title">${escHtml(t.title)}</div>
+      <div class="task-date">${t.created.slice(0,10)}</div>
+      <button class="del-btn" onclick="del('${t.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function addTask() {
+  const input = document.getElementById('newTask');
+  const title = input.value.trim();
+  if (!title) return;
+  const res = await fetch('/api/tasks', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title})
+  });
+  const task = await res.json();
+  tasks.unshift(task);
+  input.value = '';
+  render();
+}
+
+async function toggle(id) {
+  const res = await fetch(`/api/tasks/${id}`, {method: 'PATCH'});
+  const updated = await res.json();
+  tasks = tasks.map(t => t.id === id ? updated : t);
+  render();
+}
+
+async function del(id) {
+  await fetch(`/api/tasks/${id}`, {method: 'DELETE'});
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('newTask').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+load();
+</script>
+</body>
+</html>

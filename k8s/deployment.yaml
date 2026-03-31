@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskr
+  labels:
+    app: taskr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: taskr
+  template:
+    metadata:
+      labels:
+        app: taskr
+    spec:
+      containers:
+        - name: taskr
+          image: taskr:latest          # replace with your registry image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATA_FILE
+              value: /data/tasks.json
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: taskr-pvc
