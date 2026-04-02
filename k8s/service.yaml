@@ -9,4 +9,4 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 5000
-  type: LoadBalancer   # use ClusterIP if behind an Ingress
+  type: NodePort   # use ClusterIP if behind an Ingress
