@@ -33,7 +33,7 @@ pipeline {
             stage('Deploy') {
                 steps {
                     sh '''
-                
+                        minikube update-context
                         minikube status
                         kubectl apply -f k8s/pvc.yaml
                         kubectl apply -f k8s/service.yaml
