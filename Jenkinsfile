@@ -29,9 +29,6 @@ pipeline {
                             '''
                 }
             } }
-                post {
-                    always { sh 'docker logout' }
-                        }
         
             stage('Deploy') {
                 steps {
